@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IA Psychologue | Votre thérapeute virtuel bienveillant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4361ee',
+                        primaryLight: '#4895ef',
+                        secondary: '#f6c7a9',
+                        background: '#f8f3ed',
+                        card: '#ffffff',
+                        textPrimary: '#2d3748',
+                        textSecondary: '#718096',
+                        sidebar: '#1a202c',
+                        sidebarHover: '#2d3748',
+                        userMsg: '#4361ee',
+                        aiMsg: '#ffffff',
+                    },
+                    fontFamily: {
+                        nunito: ['Nunito', 'sans-serif'],
+                    },
+                    borderRadius: {
+                        'xl': '1rem',
+                        '2xl': '1.5rem',
+                        '3xl': '2rem',
+                        'full': '9999px'
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 30px rgba(0, 0, 0, 0.05)',
+                        'medium': '0 15px 40px rgba(0, 0, 0, 0.08)'
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: #f8f3ed;
+            color: #2d3748;
+            min-height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+        
+        /* Barre latérale - Fixe et indépendante */
+        .sidebar {
+            width: 280px;
+            background-color: #1a202c;
+            color: #e2e8f0;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            border-radius: 0 2.5rem 2.5rem 0;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.15);
+            z-index: 20;
+            flex-shrink: 0;
+        }
+        
+        .sidebar-header {
+            padding: 1.75rem;
+            border-bottom: 1px solid #2d3748;
+        }
+        
+        .app-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .logo-circle {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4361ee, #4895ef);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        .new-chat-btn {
+            background: linear-gradient(135deg, #4361ee, #4895ef);
+            color: white;
+            border-radius: 1.5rem;
+            padding: 1rem;
+            text-align: center;
+            margin: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.25);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .new-chat-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(67, 97, 238, 0.35);
+        }
+        
+        .section-title {
+            padding: 0.75rem 1.5rem;
+            color: #a0aec0;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .section-title:hover {
+            color: #e2e8f0;
+            background-color: #2d3748;
+        }
+        
+        .conversation-item {
+            padding: 1rem 1.5rem;
+            border-radius: 1.2rem;
+            margin: 0 1rem 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .conversation-item:hover {
+            background-color: #2d3748;
+        }
+        
+        .conversation-item.active {
+            background: rgba(67, 97, 238, 0.2);
+        }
+        
+        .conversation-icon {
+            color: #63b3ed;
+            font-size: 1.1rem;
+        }
+        
+        .conversation-title {
+            flex-grow: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 0.95rem;
+        }
+        
+        .edit-btn, .delete-btn {
+            color: #a0aec0;
+            transition: all 0.2s;
+            padding: 0.25rem;
+            border-radius: 0.5rem;
+        }
+        
+        .edit-btn:hover {
+            color: #63b3ed;
+            background: rgba(99, 179, 237, 0.1);
+        }
+        
+        .delete-btn:hover {
+            color: #fc8181;
+            background: rgba(252, 129, 129, 0.1);
+        }
+        
+        /* Contenu principal */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin-left: 280px;
+            width: calc(100% - 280px);
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Vues principales (pleine page) */
+        .main-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        
+        /* Vue d'accueil */
+        .welcome-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, #fcf7f0 0%, #f8f3ed 100%);
+        }
+        
+        .welcome-icon {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4361ee, #4895ef);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 15px 30px rgba(67, 97, 238, 0.25);
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        .welcome-title {
+            font-size: 2.75rem;
+            font-weight: 800;
+            margin-bottom: 1.25rem;
+            color: #2d3748;
+            background: linear-gradient(135deg, #4361ee, #4895ef);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .welcome-subtitle {
+            font-size: 1.35rem;
+            color: #4a5568;
+            max-width: 700px;
+            line-height: 1.7;
+            margin-bottom: 2.5rem;
+            font-weight: 400;
+        }
+        
+        .session-input-container {
+            background: white;
+            border-radius: 2rem;
+            padding: 2.5rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.07);
+            max-width: 750px;
+            width: 90%;
+            margin-top: 1.5rem;
+        }
+        
+        .session-input {
+            width: 100%;
+            min-height: 160px;
+            padding: 1.5rem;
+            border-radius: 1.75rem;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            resize: none;
+            font-size: 1.15rem;
+            transition: all 0.3s ease;
+            font-family: 'Nunito', sans-serif;
+            color: #2d3748;
+        }
+        
+        .session-input:focus {
+            outline: none;
+            border-color: #4361ee;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+        }
+        
+        .start-session-btn {
+            background: linear-gradient(135deg, #4361ee, #4895ef);
+            color: white;
+            border-radius: 1.75rem;
+            padding: 1.1rem 3rem;
+            font-size: 1.15rem;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 25px rgba(67, 97, 238, 0.35);
+            margin-top: 2rem;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .start-session-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 35px rgba(67, 97, 238, 0.45);
+        }
+        
+        .confidentiality-badge {
+            background: rgba(72, 187, 120, 0.15);
+            border-radius: 1.5rem;
+            padding: 0.8rem 1.75rem;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 2rem;
+            color: #48bb78;
+            backdrop-filter: blur(4px);
+        }
+        
+        /* Vue de chat */
+        .chat-view {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .chat-header {
+            padding: 1.25rem 2rem;
+            background: white;
+            border-bottom: 1px solid #edf2f7;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.03);
+            position: relative;
+            z-index: 10;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2.5rem 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+            scroll-behavior: smooth;
+            min-height: 0;
+        }
+        
+        /* Barre de défilement discrète */
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+            background: transparent;
+        }
+        
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: rgba(67, 97, 238, 0.3);
+            border-radius: 4px;
+            visibility: hidden;
+        }
+        
+        .chat-messages:hover::-webkit-scrollbar-thumb {
+            visibility: visible;
+        }
+        
+        /* Messages */
+        .message {
+            max-width: 80%;
+            animation: fadeIn 0.4s ease-out;
+            position: relative;
+        }
+        
+        .user-message {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #4361ee, #4895ef);
+            color: white;
+            border-radius: 1.8rem 1.8rem 0.6rem 1.8rem;
+            padding: 1.4rem 1.8rem;
+            box-shadow: 0 8px 20px rgba(67, 97, 238, 0.2);
+        }
+        
+        .ai-message {
+            align-self: flex-start;
+            background: white;
+            border-radius: 1.8rem 1.8rem 1.8rem 0.6rem;
+            padding: 1.8rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f0f4f8;
+        }
+        
+        .ai-header {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            margin-bottom: 0.85rem;
+        }
+        
+        .ai-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 1.2rem;
+            background: linear-gradient(135deg, #4361ee, #4895ef);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.2);
+        }
+        
+        /* Zone de saisie */
+        .input-container {
+            background: white;
+            padding: 1.5rem 2rem;
+            border-top: 1px solid #edf2f7;
+            box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.03);
+            position: sticky;
+            bottom: 0;
+            z-index: 10;
+        }
+        
+        .input-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .message-input {
+            width: 100%;
+            min-height: 75px;
+            padding: 1.4rem 6rem 1.4rem 1.8rem;
+            border-radius: 1.8rem;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            resize: none;
+            font-size: 1.15rem;
+            transition: all 0.3s ease;
+            font-family: 'Nunito', sans-serif;
+            color: #2d3748;
+            scrollbar-width: thin;
+        }
+        
+        .message-input:focus {
+            outline: none;
+            border-color: #4361ee;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+        }
+        
+        .send-button {
+            position: absolute;
+            right: 1.2rem;
+            bottom: 1.2rem;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4361ee, #4895ef);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+            border: none;
+        }
+        
+        .send-button:hover {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 10px 25px rgba(67, 97, 238, 0.4);
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message-animation {
+            animation: fadeIn 0.4s ease-out;
+        }
+        
+        /* Animation de texte */
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 1.2rem 1.8rem;
+            background: white;
+            border-radius: 1.8rem 1.8rem 1.8rem 0.6rem;
+            border: 1px solid #f0f4f8;
+            align-self: flex-start;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.75rem;
+        }
+        
+        .typing-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin: 0 5px;
+            animation: typing 1.4s infinite ease-in-out;
+            background: #4361ee;
+        }
+        
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        
+        /* Émotion indicator */
+        .emotion-indicator {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            position: absolute;
+            top: -13px;
+            right: -13px;
+            background: white;
+        }
+        
+        /* Tableau de bord - Pleine page */
+        .dashboard-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 2rem;
+            background: #f8f3ed;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+        
+        /* Vue des exercices - Pleine page */
+        .exercises-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 2rem;
+            background: #f8f3ed;
+        }
+        
+        .exercise-card {
+            background: white;
+            border-radius: 1.5rem;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+        }
+        
+        .exercise-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                transition: transform 0.4s ease;
+                z-index: 100;
+            }
+            
+            .sidebar.open {
+                transform: translateX(280px);
+            }
+            
+            .sidebar-toggle {
+                display: flex;
+            }
+            
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+        }
+        
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            top: 25px;
+            left: 25px;
+            z-index: 90;
+            background: white;
+            border-radius: 50%;
+            padding: 14px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            width: 54px;
+            height: 54px;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* Pied de page */
+        footer {
+            background: white;
+            padding: 1.5rem;
+            text-align: center;
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        /* Nouveaux styles pour corriger les problèmes */
+        .page-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .view-container {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        /* Correction du tableau de bord */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+        
+        /* Notification */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #48bb78;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* NOUVELLES STYLES POUR LE TABLEAU DE BORD */
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 2rem;
+            overflow: hidden;
+        }
+        
+        .dashboard-header {
+            margin-bottom: 2rem;
+        }
+        
+        .dashboard-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-template-rows: auto 1fr;
+            gap: 1.5rem;
+            height: calc(100vh - 180px);
+            overflow: hidden;
+        }
+        
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #4361ee;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #718096;
+            font-size: 1rem;
+        }
+        
+        .dashboard-charts {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .chart-section {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+        
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #2d3748;
+        }
+        
+        .chart-container {
+            flex: 1;
+            min-height: 0;
+            position: relative;
+        }
+        
+        /* Correction du défilement */
+        .scroll-fix {
+            overflow: hidden;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <!-- Bouton pour ouvrir/fermer la barre latérale sur mobile -->
+    <div class="sidebar-toggle lg:hidden">
+        <i class="fas fa-bars text-gray-700 text-xl"></i>
+    </div>
+    
+    <!-- Barre latérale pour les conversations -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="app-logo">
+                <div class="logo-circle">
+                    <i class="fas fa-head-side-virus text-white text-lg"></i>
+                </div>
+                <h1 class="text-xl font-bold">IA Psychologue</h1>
+            </div>
+        </div>
+        
+        <button class="new-chat-btn" id="newSessionBtn">
+            <i class="fas fa-plus"></i> Nouvelle séance
+        </button>
+        
+        <div class="section-title">
+            <i class="fas fa-history"></i>
+            <span>Historique des séances</span>
+        </div>
+        
+        <div class="conversations-container flex-1 overflow-y-auto px-3 py-2" id="conversationsList">
+            <!-- Les conversations seront ajoutées ici dynamiquement -->
+        </div>
+        
+        <div class="mt-auto">
+            <div class="section-title" id="dashboardBtn">
+                <i class="fas fa-chart-line"></i>
+                <span>Tableau de bord</span>
+            </div>
+            
+            <div class="section-title" id="exercisesBtn">
+                <i class="fas fa-spa"></i>
+                <span>Exercices</span>
+            </div>
+            
+            <div class="p-5 border-t border-gray-700">
+                <div class="flex items-center gap-3 text-gray-400 hover:text-gray-200 cursor-pointer">
+                    <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <span>Mon compte</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Contenu principal -->
+    <div class="main-content">
+        <!-- Structure de page réorganisée -->
+        <div class="page-container">
+            <!-- Vue d'accueil -->
+            <div id="homeView" class="view-container">
+                <div class="welcome-container">
+                    <div class="welcome-icon">
+                        <i class="fas fa-hands-helping text-white text-4xl"></i>
+                    </div>
+                    <h2 class="welcome-title">Votre soutien émotionnel intelligent</h2>
+                    <p class="welcome-subtitle">
+                        Posez votre question, commencez à discuter avec votre IA psychologue. 
+                        Un espace confidentiel pour explorer vos pensées et émotions.
+                    </p>
+                    
+                    <div class="session-input-container">
+                        <textarea 
+                            id="sessionStartInput"
+                            class="session-input"
+                            placeholder="Parlez de ce qui vous préoccupe..."
+                        ></textarea>
+                        <div class="flex justify-center">
+                            <button id="startSessionBtn" class="start-session-btn">
+                                Commencer la séance
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="confidentiality-badge">
+                        <i class="fas fa-lock"></i>
+                        <span>Toutes vos conversations sont strictement confidentielles</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vue de chat (cachée au départ) -->
+            <div id="chatView" class="view-container hidden">
+                <div class="chat-view">
+                    <div class="chat-header">
+                        <div class="max-w-6xl mx-auto flex items-center gap-4">
+                            <button id="backToHomeBtn" class="flex items-center text-primary text-base gap-2">
+                                <i class="fas fa-arrow-left"></i>
+                                <span>Retour</span>
+                            </button>
+                            <h2 class="text-xl font-semibold text-gray-800" id="currentSessionTitle">Séance en cours</h2>
+                            <button id="editSessionBtn" class="ml-2 text-primaryLight hover:text-primary">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="chat-messages" id="chatMessages">
+                        <!-- Les messages apparaîtront ici dynamiquement -->
+                    </div>
+
+                    <!-- Zone de saisie -->
+                    <div class="input-container" id="chatInputContainer">
+                        <div class="input-wrapper">
+                            <textarea 
+                                id="chatInput"
+                                class="message-input"
+                                placeholder="Écrivez votre pensée..."
+                            ></textarea>
+                            <button id="sendMessageBtn" class="send-button">
+                                <i class="fas fa-paper-plane text-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vue du tableau de bord (pleine page) -->
+            <div id="dashboardView" class="view-container hidden">
+                <div class="dashboard-container scroll-fix">
+                    <div class="dashboard-header">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-3xl font-bold text-gray-800">Tableau de bord global</h2>
+                            <button id="backFromDashboardBtn" class="flex items-center text-primary text-base gap-2">
+                                <i class="fas fa-arrow-left"></i>
+                                <span>Retour</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-content">
+                        <div class="dashboard-stats">
+                            <div class="stat-card">
+                                <div class="stat-value" id="totalSessions">0</div>
+                                <div class="stat-label">Séances totales</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="totalMessages">0</div>
+                                <div class="stat-label">Messages échangés</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="avgMessageLength">0</div>
+                                <div class="stat-label">Mots/message moyen</div>
+                            </div>
+                        </div>
+                        
+                        <div class="dashboard-charts">
+                            <div class="chart-section">
+                                <h3 class="chart-title">Distribution des émotions</h3>
+                                <div class="chart-container">
+                                    <canvas id="emotionChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="chart-section">
+                                <h3 class="chart-title">Mots fréquents</h3>
+                                <div class="chart-container">
+                                    <div id="wordCloud" class="flex flex-wrap items-center justify-center p-4 bg-gray-50 rounded-xl h-full"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vue des exercices (pleine page) -->
+            <div id="exercisesView" class="view-container hidden">
+                <div class="exercises-view">
+                    <div class="max-w-6xl mx-auto flex-1">
+                        <div class="flex justify-between items-center mb-8">
+                            <h2 class="text-3xl font-bold text-gray-800">Exercices de bien-être</h2>
+                            <button id="backFromExercisesBtn" class="flex items-center text-primary text-base gap-2">
+                                <i class="fas fa-arrow-left"></i>
+                                <span>Retour</span>
+                            </button>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8" id="exercisesContainer">
+                            <!-- Les exercices seront chargés ici -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pied de page -->
+        <footer>
+            <p>IA Psychologue - Un espace numérique pour votre bien-être mental</p>
+            <p class="mt-1">Confidentialité assurée · Thérapie accessible 24h/24</p>
+        </footer>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification hidden">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle mr-2"></i>
+            <span id="notificationText"></span>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Éléments DOM
+            const homeView = document.getElementById('homeView');
+            const chatView = document.getElementById('chatView');
+            const dashboardView = document.getElementById('dashboardView');
+            const exercisesView = document.getElementById('exercisesView');
+            const startSessionBtn = document.getElementById('startSessionBtn');
+            const sessionStartInput = document.getElementById('sessionStartInput');
+            const backToHomeBtn = document.getElementById('backToHomeBtn');
+            const backFromDashboardBtn = document.getElementById('backFromDashboardBtn');
+            const backFromExercisesBtn = document.getElementById('backFromExercisesBtn');
+            const chatInput = document.getElementById('chatInput');
+            const sendMessageBtn = document.getElementById('sendMessageBtn');
+            const chatMessages = document.getElementById('chatMessages');
+            const newSessionBtn = document.getElementById('newSessionBtn');
+            const sidebarToggle = document.querySelector('.sidebar-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const currentSessionTitle = document.getElementById('currentSessionTitle');
+            const conversationsList = document.getElementById('conversationsList');
+            const chatInputContainer = document.getElementById('chatInputContainer');
+            const editSessionBtn = document.getElementById('editSessionBtn');
+            const dashboardBtn = document.getElementById('dashboardBtn');
+            const exercisesBtn = document.getElementById('exercisesBtn');
+            const emotionChart = document.getElementById('emotionChart');
+            const wordCloud = document.getElementById('wordCloud');
+            const totalSessions = document.getElementById('totalSessions');
+            const totalMessages = document.getElementById('totalMessages');
+            const avgMessageLength = document.getElementById('avgMessageLength');
+            const exercisesContainer = document.getElementById('exercisesContainer');
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notificationText');
+            
+            // Variables d'état
+            let conversations = {};
+            let activeConversationId = null;
+            let typingElement = null;
+            let chatStarted = false;
+            
+            // Charger les conversations depuis le localStorage
+            function loadConversations() {
+                const savedConversations = localStorage.getItem('psychologist_conversations');
+                if (savedConversations) {
+                    conversations = JSON.parse(savedConversations);
+                    renderConversationsList();
+                    
+                    // Charger la dernière conversation active
+                    const lastConvId = localStorage.getItem('last_conversation');
+                    if (lastConvId && conversations[lastConvId]) {
+                        loadConversation(lastConvId);
+                    }
+                }
+            }
+            
+            // Sauvegarder les conversations dans le localStorage
+            function saveConversations() {
+                localStorage.setItem('psychologist_conversations', JSON.stringify(conversations));
+            }
+            
+            // Fonctions principales
+            function showHome() {
+                hideAllViews();
+                homeView.classList.remove('hidden');
+                
+                if (window.innerWidth < 1024) {
+                    sidebar.classList.remove('open');
+                }
+            }
+            
+            function showChat() {
+                hideAllViews();
+                chatView.classList.remove('hidden');
+                
+                if (window.innerWidth < 1024) {
+                    sidebar.classList.remove('open');
+                }
+                
+                // Faire défiler vers le bas
+                scrollToBottom();
+            }
+            
+            function showDashboard() {
+                hideAllViews();
+                dashboardView.classList.remove('hidden');
+                loadGlobalProgressData();
+            }
+            
+            function showExercises() {
+                hideAllViews();
+                exercisesView.classList.remove('hidden');
+                loadExercises();
+            }
+            
+            function hideAllViews() {
+                homeView.classList.add('hidden');
+                chatView.classList.add('hidden');
+                dashboardView.classList.add('hidden');
+                exercisesView.classList.add('hidden');
+            }
+            
+            // Créer une nouvelle conversation
+            function createNewConversation() {
+                const convId = 'conv_' + Date.now().toString();
+                activeConversationId = convId;
+                
+                conversations[convId] = {
+                    id: convId,
+                    title: 'Nouvelle séance',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    messages: []
+                };
+                
+                saveConversations();
+                renderConversationsList();
+                resetChatUI();
+                localStorage.setItem('last_conversation', convId);
+                
+                // Afficher la vue d'accueil pour commencer
+                showHome();
+            }
+            
+            // Charger une conversation existante
+            function loadConversation(convId) {
+                activeConversationId = convId;
+                const conversation = conversations[convId];
+                
+                if (!conversation) return;
+                
+                // Mettre à jour l'UI
+                resetChatUI();
+                currentSessionTitle.textContent = conversation.title;
+                
+                // Afficher les messages
+                conversation.messages.forEach(msg => {
+                    addMessageToUI(msg.text, msg.sender);
+                });
+                
+                // Marquer comme active dans la liste
+                document.querySelectorAll('.conversation-item').forEach(el => {
+                    el.classList.remove('active');
+                    if (el.dataset.id === convId) {
+                        el.classList.add('active');
+                    }
+                });
+                
+                // Démarrer le chat s'il y a des messages
+                if (conversation.messages.length > 0) {
+                    chatStarted = true;
+                    showChat();
+                }
+                
+                localStorage.setItem('last_conversation', convId);
+            }
+            
+            // Renommer la session courante
+            function renameCurrentSession() {
+                if (!activeConversationId) return;
+                
+                const newTitle = prompt("Entrez le nouveau nom pour cette séance:", conversations[activeConversationId].title);
+                if (newTitle && newTitle.trim() !== "") {
+                    conversations[activeConversationId].title = newTitle.trim();
+                    currentSessionTitle.textContent = newTitle.trim();
+                    saveConversations();
+                    renderConversationsList();
+                }
+            }
+            
+            // Supprimer une conversation
+            function deleteConversation(convId) {
+                if (!confirm("Voulez-vous vraiment supprimer cette séance? Cette action est irréversible.")) {
+                    return;
+                }
+                
+                delete conversations[convId];
+                saveConversations();
+                
+                // Si on supprime la conversation active, créer une nouvelle
+                if (activeConversationId === convId) {
+                    if (Object.keys(conversations).length > 0) {
+                        // Charger la première conversation disponible
+                        const firstConvId = Object.keys(conversations)[0];
+                        loadConversation(firstConvId);
+                    } else {
+                        // Créer une nouvelle conversation si aucune n'existe
+                        createNewConversation();
+                    }
+                }
+                
+                // Mettre à jour l'UI
+                renderConversationsList();
+                
+                // Mettre à jour le titre de la session active
+                if (activeConversationId) {
+                    currentSessionTitle.textContent = conversations[activeConversationId].title;
+                }
+            }
+            
+            // Réinitialiser l'UI du chat
+            function resetChatUI() {
+                chatStarted = false;
+                chatMessages.innerHTML = '';
+            }
+            
+            // Afficher la liste des conversations
+            function renderConversationsList() {
+                conversationsList.innerHTML = '';
+                
+                // Trier les conversations par date de mise à jour (les plus récentes en premier)
+                const sortedConversations = Object.values(conversations)
+                    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                
+                // Grouper par jour
+                const today = new Date();
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                const groupedConversations = {
+                    "Aujourd'hui": [],
+                    "Hier": [],
+                    "7 derniers jours": [],
+                    "30 derniers jours": []
+                };
+                
+                sortedConversations.forEach(conv => {
+                    const convDate = new Date(conv.updatedAt);
+                    
+                    if (isSameDay(convDate, today)) {
+                        groupedConversations["Aujourd'hui"].push(conv);
+                    } else if (isSameDay(convDate, yesterday)) {
+                        groupedConversations["Hier"].push(conv);
+                    } else if (daysDiff(convDate, today) <= 7) {
+                        groupedConversations["7 derniers jours"].push(conv);
+                    } else {
+                        groupedConversations["30 derniers jours"].push(conv);
+                    }
+                });
+                
+                // Afficher par groupes
+                Object.keys(groupedConversations).forEach(group => {
+                    const conversationsInGroup = groupedConversations[group];
+                    if (conversationsInGroup.length === 0) return;
+                    
+                    const groupHeader = document.createElement('div');
+                    groupHeader.className = 'px-4 py-3 text-sm text-gray-500 font-medium';
+                    groupHeader.textContent = group;
+                    conversationsList.appendChild(groupHeader);
+                    
+                    conversationsInGroup.forEach(conv => {
+                        const convEl = document.createElement('div');
+                        convEl.className = `conversation-item ${conv.id === activeConversationId ? 'active' : ''}`;
+                        convEl.dataset.id = conv.id;
+                        convEl.innerHTML = `
+                            <i class="fas fa-comment conversation-icon"></i>
+                            <div class="conversation-title">${conv.title}</div>
+                            <div class="flex">
+                                <button class="edit-btn ml-2">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="delete-btn ml-2">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        `;
+                        
+                        convEl.addEventListener('click', (e) => {
+                            if (!e.target.closest('.edit-btn') && !e.target.closest('.delete-btn')) {
+                                loadConversation(conv.id);
+                                showChat();
+                            }
+                        });
+                        
+                        const editBtn = convEl.querySelector('.edit-btn');
+                        editBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const newTitle = prompt("Renommer la séance:", conv.title);
+                            if (newTitle && newTitle.trim() !== "") {
+                                conversations[conv.id].title = newTitle.trim();
+                                saveConversations();
+                                renderConversationsList();
+                                
+                                if (activeConversationId === conv.id) {
+                                    currentSessionTitle.textContent = newTitle.trim();
+                                }
+                            }
+                        });
+                        
+                        const deleteBtn = convEl.querySelector('.delete-btn');
+                        deleteBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            deleteConversation(conv.id);
+                        });
+                        
+                        conversationsList.appendChild(convEl);
+                    });
+                });
+            }
+            
+            function isSameDay(date1, date2) {
+                return date1.getDate() === date2.getDate() &&
+                       date1.getMonth() === date2.getMonth() &&
+                       date1.getFullYear() === date2.getFullYear();
+            }
+            
+            function daysDiff(date1, date2) {
+                const diffTime = Math.abs(date2 - date1);
+                return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            }
+            
+            // Ajouter un message à l'UI
+            function addMessageToUI(text, sender) {
+                if (sender === 'ai' && text === 'typing') {
+                    const typingEl = document.createElement('div');
+                    typingEl.className = 'typing-indicator message-animation';
+                    typingEl.innerHTML = `
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    `;
+                    chatMessages.appendChild(typingEl);
+                    typingElement = typingEl;
+                    scrollToBottom();
+                } else {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = 'message message-animation';
+                    messageDiv.classList.add(sender === 'user' ? 'user-message' : 'ai-message');
+                    
+                    if (sender === 'ai') {
+                        messageDiv.innerHTML = `
+                            <div class="ai-header">
+                                <div class="ai-avatar">
+                                    <i class="fas fa-head-side-virus text-white"></i>
+                                </div>
+                                <span class="font-medium text-gray-700">Psychologue IA</span>
+                            </div>
+                            <div class="ai-text text-gray-700">${text.replace(/\n/g, '<br>')}</div>
+                        `;
+                    } else {
+                        messageDiv.textContent = text;
+                    }
+                    
+                    // Toujours ajouter à la fin du conteneur
+                    chatMessages.appendChild(messageDiv);
+                    scrollToBottom();
+                }
+            }
+            
+            // Faire défiler vers le bas
+            function scrollToBottom() {
+                setTimeout(() => {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }, 100);
+            }
+            
+            // Ajouter un message à la conversation
+            function addMessageToConversation(text, sender) {
+                if (!activeConversationId) return;
+                
+                const message = {
+                    text,
+                    sender,
+                    timestamp: new Date().toISOString()
+                };
+                
+                conversations[activeConversationId].messages.push(message);
+                
+                // Mettre à jour le titre de la conversation avec le début du premier message
+                if (conversations[activeConversationId].messages.length === 1 && sender === 'user') {
+                    conversations[activeConversationId].title = text.substring(0, 30) + (text.length > 30 ? '...' : '');
+                    currentSessionTitle.textContent = conversations[activeConversationId].title;
+                }
+                
+                conversations[activeConversationId].updatedAt = new Date().toISOString();
+                saveConversations();
+                renderConversationsList();
+                
+                addMessageToUI(text, sender);
+            }
+            
+            // Fonction pour obtenir une réponse de l'IA
+            async function getAIResponse(userMessage, sessionId) {
+                try {
+                    // Envoyer la requête à l'API
+                    const response = await fetch("http://localhost:3000/api/chat", {
+                        method: "POST",
+                        headers: { 
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ 
+                            prompt: userMessage,
+                            sessionId: sessionId
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    return data.response;
+                } catch (error) {
+                    console.error("Erreur API:", error);
+                    return "Désolé, une erreur s'est produite. Veuillez réessayer.";
+                }
+            }
+            
+            // Fonction pour analyser l'émotion
+            async function analyzeEmotion(text) {
+                try {
+                    const response = await fetch("/api/analyze-emotion", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ text: text })
+                    });
+                    
+                    const data = await response.json();
+                    return data.emotion;
+                } catch (e) {
+                    console.error("Erreur analyse émotion:", e);
+                    return "neutre";
+                }
+            }
+            
+            // Ajouter l'indicateur d'émotion
+            function addEmotionIndicator(messageElement, emotion) {
+                const emotionMap = {
+                    'joie': '😊',
+                    'tristesse': '😢',
+                    'colère': '😠',
+                    'peur': '😨',
+                    'surprise': '😲',
+                    'dégoût': '🤢',
+                    'neutre': '😐'
+                };
+                
+                const emotionIcon = emotionMap[emotion] || '😐';
+                
+                // Créer l'indicateur
+                const indicator = document.createElement('div');
+                indicator.className = 'emotion-indicator';
+                indicator.innerHTML = emotionIcon;
+                
+                messageElement.appendChild(indicator);
+            }
+            
+            // Envoyer un message
+            async function sendMessage() {
+                const message = chatInput.value.trim();
+                if (message) {
+                    // Démarrer le chat si ce n'est pas encore fait
+                    if (!chatStarted) {
+                        chatStarted = true;
+                        showChat();
+                    }
+                    
+                    // Ajouter le message de l'utilisateur
+                    addMessageToConversation(message, 'user');
+                    scrollToBottom();
+                    
+                    // Effacer le champ de saisie
+                    chatInput.value = '';
+                    chatInput.style.height = 'auto';
+                    
+                    // Analyser l'émotion
+                    const emotion = await analyzeEmotion(message);
+                    
+                    // Mettre à jour le dernier message avec l'émotion
+                    const lastMessage = conversations[activeConversationId].messages[conversations[activeConversationId].messages.length - 1];
+                    lastMessage.emotion = emotion;
+                    saveConversations();
+                    
+                    // Mettre à jour l'UI avec l'émotion
+                    const lastMessageElement = chatMessages.lastElementChild;
+                    if (lastMessageElement && lastMessageElement.classList.contains('user-message')) {
+                        addEmotionIndicator(lastMessageElement, emotion);
+                    }
+                    
+                    // Ajouter un indicateur de saisie
+                    addMessageToUI('typing', 'ai');
+                    
+                    // Obtenir une réponse de l'IA
+                    const aiResponse = await getAIResponse(message, activeConversationId);
+                    
+                    // Retirer l'indicateur de saisie
+                    if (typingElement) {
+                        typingElement.remove();
+                        typingElement = null;
+                    }
+                    
+                    // Ajouter la réponse
+                    addMessageToConversation(aiResponse, 'ai');
+                    scrollToBottom();
+                }
+            }
+            
+            // Charger les données de progression globale
+            function loadGlobalProgressData() {
+                // Agréger les données de toutes les conversations
+                const allMessages = [];
+                let totalMessageLength = 0;
+                let wordCount = 0;
+                
+                Object.values(conversations).forEach(conv => {
+                    conv.messages.forEach(msg => {
+                        if (msg.sender === 'user') {
+                            allMessages.push(msg);
+                            totalMessageLength += msg.text.length;
+                            wordCount += msg.text.split(/\s+/).length;
+                        }
+                    });
+                });
+                
+                // Analyser les émotions dans tous les messages
+                const emotionCount = {
+                    joie: 0, tristesse: 0, colère: 0, peur: 0, surprise: 0, dégoût: 0, neutre: 0
+                };
+                
+                const wordFrequency = {};
+                
+                allMessages.forEach(msg => {
+                    if (msg.emotion) {
+                        emotionCount[msg.emotion] = (emotionCount[msg.emotion] || 0) + 1;
+                    }
+                    
+                    // Analyser les mots
+                    const words = msg.text.toLowerCase().split(/\s+/);
+                    words.forEach(word => {
+                        if (word.length > 3) { // Ignorer les mots courts
+                            wordFrequency[word] = (wordFrequency[word] || 0) + 1;
+                        }
+                    });
+                });
+                
+                // Trouver les mots les plus fréquents
+                const sortedWords = Object.entries(wordFrequency)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 10)
+                    .map(([word, count]) => ({ word, count }));
+                
+                // Mettre à jour les statistiques globales
+                totalSessions.textContent = Object.keys(conversations).length;
+                totalMessages.textContent = allMessages.length;
+                avgMessageLength.textContent = allMessages.length ? Math.round(wordCount / allMessages.length) : 0;
+                
+                // Mettre à jour l'UI
+                renderEmotionChart(emotionCount);
+                renderWordCloud(sortedWords);
+            }
+            
+            // Afficher le graphique d'émotions
+            function renderEmotionChart(emotionData) {
+                const ctx = document.getElementById('emotionChart').getContext('2d');
+                const emotions = Object.keys(emotionData);
+                const counts = Object.values(emotionData);
+                
+                const emotionColors = {
+                    'joie': '#4CAF50',
+                    'tristesse': '#2196F3',
+                    'colère': '#F44336',
+                    'peur': '#9C27B0',
+                    'surprise': '#FF9800',
+                    'dégoût': '#795548',
+                    'neutre': '#9E9E9E'
+                };
+                
+                const backgroundColors = emotions.map(e => emotionColors[e]);
+                
+                // Détruire le graphique précédent s'il existe
+                if (window.emotionChartInstance) {
+                    window.emotionChartInstance.destroy();
+                }
+                
+                window.emotionChartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: emotions,
+                        datasets: [{
+                            data: counts,
+                            backgroundColor: backgroundColors,
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { 
+                                position: 'bottom',
+                                labels: {
+                                    font: {
+                                        family: "'Nunito', sans-serif",
+                                        size: 14
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                bodyFont: {
+                                    family: "'Nunito', sans-serif"
+                                }
+                            }
+                        },
+                        cutout: '65%'
+                    }
+                });
+            }
+            
+            // Afficher le nuage de mots
+            function renderWordCloud(words) {
+                const container = document.getElementById('wordCloud');
+                container.innerHTML = '';
+                
+                // Calculer les tailles min et max pour l'échelle
+                const counts = words.map(w => w.count);
+                const maxCount = Math.max(...counts);
+                const minCount = Math.min(...counts);
+                const sizeRange = [20, 40]; // Taille min et max en px
+                
+                words.forEach(word => {
+                    // Calculer la taille proportionnelle
+                    const size = minCount === maxCount ? 
+                        sizeRange[0] + (sizeRange[1] - sizeRange[0]) / 2 :
+                        sizeRange[0] + 
+                        ((word.count - minCount) / (maxCount - minCount)) * 
+                        (sizeRange[1] - sizeRange[0]);
+                    
+                    const hue = Math.floor(Math.random() * 360);
+                    const element = document.createElement('div');
+                    element.className = 'inline-block mx-2 my-1 transition-all duration-300 hover:scale-110';
+                    element.style.fontSize = `${size}px`;
+                    element.style.fontWeight = '600';
+                    element.style.color = `hsl(${hue}, 70%, 50%)`;
+                    element.textContent = word.word;
+                    
+                    container.appendChild(element);
+                });
+            }
+            
+            // Afficher une notification
+            function showNotification(message) {
+                notificationText.textContent = message;
+                notification.classList.remove('hidden');
+                notification.classList.add('show');
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.classList.add('hidden'), 300);
+                }, 3000);
+            }
+            
+            // Charger les exercices
+            function loadExercises() {
+                const exercises = [
+                    {
+                        id: 'breathing',
+                        title: "Respiration profonde",
+                        description: "Un exercice simple pour réduire le stress et l'anxiété en régulant votre respiration",
+                        duration: 5,
+                        icon: 'fas fa-wind'
+                    },
+                    {
+                        id: 'mindfulness',
+                        title: "Méditation de pleine conscience",
+                        description: "Concentrez-vous sur le moment présent pour apaiser votre esprit",
+                        duration: 10,
+                        icon: 'fas fa-spa'
+                    },
+                    {
+                        id: 'gratitude',
+                        title: "Journal de gratitude",
+                        description: "Cultivez une attitude reconnaissante pour améliorer votre bien-être",
+                        duration: 7,
+                        icon: 'fas fa-book'
+                    },
+                    {
+                        id: 'visualization',
+                        title: "Visualisation positive",
+                        description: "Utilisez votre imagination pour créer des images mentales apaisantes",
+                        duration: 8,
+                        icon: 'fas fa-cloud'
+                    },
+                    {
+                        id: 'movement',
+                        title: "Mouvement conscient",
+                        description: "Connectez votre corps et votre esprit par des mouvements doux",
+                        duration: 12,
+                        icon: 'fas fa-walking'
+                    },
+                    {
+                        id: 'selfcompassion',
+                        title: "Auto-compassion",
+                        description: "Développez une relation bienveillante avec vous-même",
+                        duration: 15,
+                        icon: 'fas fa-heart'
+                    }
+                ];
+                
+                const container = document.getElementById('exercisesContainer');
+                container.innerHTML = '';
+                
+                exercises.forEach(exercise => {
+                    const card = document.createElement('div');
+                    card.className = 'exercise-card';
+                    card.innerHTML = `
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="w-12 h-12 rounded-xl bg-primaryLight flex items-center justify-center text-white text-xl">
+                                    <i class="${exercise.icon}"></i>
+                                </div>
+                                <span class="bg-primary text-white text-xs py-1 px-3 rounded-full">${exercise.duration} min</span>
+                            </div>
+                            <h3 class="font-semibold text-xl mb-2 text-gray-800">${exercise.title}</h3>
+                            <p class="text-gray-600 mb-4">${exercise.description}</p>
+                            <button 
+                                class="w-full bg-primary text-white py-3 px-4 rounded-full hover:bg-primaryLight transition-colors start-exercise"
+                                data-id="${exercise.id}"
+                            >
+                                Commencer
+                            </button>
+                        </div>
+                    `;
+                    
+                    container.appendChild(card);
+                });
+                
+                // Ajouter les gestionnaires d'événements
+                document.querySelectorAll('.start-exercise').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const exerciseId = btn.dataset.id;
+                        startExercise(exerciseId);
+                    });
+                });
+            }
+            
+            // Démarrer un exercice
+            function startExercise(exerciseId) {
+                const exercises = {
+                    'breathing': {
+                        title: "Respiration profonde",
+                        steps: [
+                            "Asseyez-vous confortablement, le dos droit",
+                            "Inspirez profondément par le nez pendant 4 secondes",
+                            "Retenez votre respiration pendant 4 secondes",
+                            "Expirez lentement par la bouche pendant 6 secondes",
+                            "Répétez ce cycle pendant 5 minutes"
+                        ]
+                    },
+                    'mindfulness': {
+                        title: "Méditation de pleine conscience",
+                        steps: [
+                            "Trouvez un endroit calme et asseyez-vous confortablement",
+                            "Fermez les yeux et portez attention à votre respiration",
+                            "Lorsque des pensées surgissent, reconnaissez-les puis laissez-les partir",
+                            "Concentrez-vous sur les sensations corporelles",
+                            "Continuez pendant 10 minutes"
+                        ]
+                    },
+                    'gratitude': {
+                        title: "Journal de gratitude",
+                        steps: [
+                            "Prenez un carnet et un stylo",
+                            "Listez 3 choses pour lesquelles vous êtes reconnaissant aujourd'hui",
+                            "Décrivez pourquoi chacune est importante pour vous",
+                            "Réfléchissez à la sensation de gratitude",
+                            "Pratiquez cet exercice quotidiennement"
+                        ]
+                    },
+                    'visualization': {
+                        title: "Visualisation positive",
+                        steps: [
+                            "Fermez les yeux et imaginez un lieu paisible",
+                            "Utilisez tous vos sens pour rendre l'image vivante",
+                            "Concentrez-vous sur les détails de cet endroit",
+                            "Restez dans cette visualisation pendant 5-10 minutes",
+                            "Ouvrez doucement les yeux quand vous êtes prêt"
+                        ]
+                    },
+                    'movement': {
+                        title: "Mouvement conscient",
+                        steps: [
+                            "Debout, les pieds écartés de la largeur des épaules",
+                            "Levez lentement les bras au-dessus de la tête en inspirant",
+                            "Redescendez les bras lentement en expirant",
+                            "Répétez ce mouvement pendant 5 minutes",
+                            "Concentrez-vous sur les sensations dans votre corps"
+                        ]
+                    },
+                    'selfcompassion': {
+                        title: "Auto-compassion",
+                        steps: [
+                            "Identifiez une difficulté que vous traversez",
+                            "Reconnaissez que cette souffrance fait partie de l'expérience humaine",
+                            "Souhaitez-vous de la bienveillance comme à un ami",
+                            "Formulez une phrase d'auto-compassion",
+                            "Répétez cet exercice quand vous en ressentez le besoin"
+                        ]
+                    }
+                };
+                
+                const exercise = exercises[exerciseId];
+                if (exercise) {
+                    showExerciseGuide(exercise);
+                }
+            }
+            
+            // Afficher le guide de l'exercice
+            function showExerciseGuide(exercise) {
+                // Créer le modal
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+                modal.innerHTML = `
+                    <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
+                        <div class="p-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-xl font-bold">${exercise.title}</h3>
+                                <button class="close-modal text-gray-500 hover:text-gray-700">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="prose">
+                                <ol class="list-decimal pl-5 space-y-3 text-gray-700">
+                                    ${exercise.steps.map(step => `<li class="mb-2">${step}</li>`).join('')}
+                                </ol>
+                            </div>
+                        </div>
+                        <div class="mt-auto p-4 bg-gray-50 flex justify-between">
+                            <div class="text-gray-600 flex items-center">
+                                <i class="fas fa-clock mr-2"></i>
+                                <span>Durée recommandée: 5-10 minutes</span>
+                            </div>
+                            <button class="complete-exercise bg-primary text-white py-2 px-6 rounded-full">
+                                J'ai terminé
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                // Gestionnaire de fermeture
+                modal.querySelector('.close-modal').addEventListener('click', () => {
+                    modal.remove();
+                });
+                
+                // Gestionnaire de fin d'exercice
+                modal.querySelector('.complete-exercise').addEventListener('click', () => {
+                    modal.remove();
+                    showNotification(`Félicitations! Vous avez complété l'exercice "${exercise.title}".`);
+                });
+            }
+            
+            // Initialisation
+            function init() {
+                loadConversations();
+                showHome();
+                
+                // Créer une session par défaut si aucune n'existe
+                if (Object.keys(conversations).length === 0) {
+                    createNewConversation();
+                }
+            }
+            
+            // Événements
+            startSessionBtn.addEventListener('click', () => {
+                const message = sessionStartInput.value.trim();
+                if (message !== '') {
+                    createNewConversation();
+                    addMessageToConversation(message, 'user');
+                    
+                    // Afficher immédiatement la vue de chat
+                    showChat();
+                    
+                    // Ajouter un indicateur de saisie
+                    addMessageToUI('typing', 'ai');
+                    
+                    getAIResponse(message, activeConversationId).then(aiResponse => {
+                        // Retirer l'indicateur de saisie
+                        if (typingElement) {
+                            typingElement.remove();
+                            typingElement = null;
+                        }
+                        
+                        addMessageToConversation(aiResponse, 'ai');
+                        scrollToBottom();
+                    });
+                    
+                    sessionStartInput.value = '';
+                } else {
+                    sessionStartInput.classList.add('ring-2', 'ring-red-300');
+                    setTimeout(() => {
+                        sessionStartInput.classList.remove('ring-2', 'ring-red-300');
+                    }, 2000);
+                }
+            });
+            
+            backToHomeBtn.addEventListener('click', showHome);
+            backFromDashboardBtn.addEventListener('click', showHome);
+            backFromExercisesBtn.addEventListener('click', showHome);
+            
+            sendMessageBtn.addEventListener('click', sendMessage);
+            
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // Auto-resize textarea
+            chatInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+            
+            // Nouvelle session
+            newSessionBtn.addEventListener('click', createNewConversation);
+            
+            // Renommer la session
+            editSessionBtn.addEventListener('click', renameCurrentSession);
+            
+            // Menu mobile
+            sidebarToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+            });
+            
+            // Fermer la sidebar quand on clique en dehors sur mobile
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth < 1024 && 
+                    !sidebar.contains(e.target) && 
+                    !sidebarToggle.contains(e.target) &&
+                    sidebar.classList.contains('open')) {
+                    sidebar.classList.remove('open');
+                }
+            });
+            
+            // Navigation
+            dashboardBtn.addEventListener('click', showDashboard);
+            exercisesBtn.addEventListener('click', showExercises);
+            
+            // Initialisation
+            init();
+        });
+    </script>
+</body>
+</html>
