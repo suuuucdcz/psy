@@ -12,8 +12,8 @@ if (!HF_API_TOKEN) {
   console.error('ERROR: HF_API_TOKEN environment variable is not set');
   process.exit(1);
 }
-const HF_CHAT_MODEL = 'microsoft/DialoGPT-medium'; // Modèle conversationnel
-const HF_EMOTION_MODEL = 'joeddav/distilbert-base-multilingual-cased-emotion'; // Modèle d'analyse d'émotions multilingue
+const HF_CHAT_MODEL = 'mistralai/Mistral-7B-Instruct-v0.3'; // Modèle conversationnel
+const HF_EMOTION_MODEL = 'mistralai/Mistral-7B-Instruct-v0.3'; // Modèle d'analyse d'émotions multilingue
 
 // Stockage des conversations par session
 const conversations = new Map();
