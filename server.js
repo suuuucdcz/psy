@@ -7,7 +7,7 @@ app.use(cors());
 app.use(express.json());
 
 // Configuration Hugging Face
-const HF_API_TOKEN = process.env.HF_API_TOKEN || 'your_hugging_face_token_here';
+const HF_API_TOKEN = process.env.HF_API_TOKEN || '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';
 const HF_CHAT_MODEL = 'microsoft/DialoGPT-medium'; // Modèle conversationnel
 const HF_EMOTION_MODEL = 'joeddav/distilbert-base-multilingual-cased-emotion'; // Modèle d'analyse d'émotions multilingue
 
