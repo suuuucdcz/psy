@@ -7,7 +7,11 @@ app.use(cors());
 app.use(express.json());
 
 // Configuration Hugging Face
-const HF_API_TOKEN = process.env.HF_API_TOKEN || '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';
+const HF_API_TOKEN = process.env.HF_API_TOKEN;
+if (!HF_API_TOKEN) {
+  console.error('ERROR: HF_API_TOKEN environment variable is not set');
+  process.exit(1);
+}
 const HF_CHAT_MODEL = 'microsoft/DialoGPT-medium'; // Modèle conversationnel
 const HF_EMOTION_MODEL = 'joeddav/distilbert-base-multilingual-cased-emotion'; // Modèle d'analyse d'émotions multilingue
 
